@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beck Depression Inventory Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: full-screen pager. Slim top bar, one slide at a time in the stage, a quiet stack of 21 cards down the right edge.
+     No panels: the only boxes are the faint ones around the answer options. */
+  --bg: #ffffff;
+  --ink: #000000;
+  --muted: #666666;
+  --line: #d9d9d9;
+  --accent: #000000;
+  --accent-ink: #ffffff;
+  --shadow: rgba(0, 0, 0, 0.18);
+  /* glass surface on options */
+  --glass-a: rgba(255, 255, 255, 0.78);
+  --glass-b: rgba(255, 255, 255, 0.38);
+  --glass-edge: rgba(255, 255, 255, 1);
+  --sh-inner: rgba(0, 0, 0, 0.07);
+  --sh-contact: rgba(0, 0, 0, 0.07);
+  --sh-drop: rgba(0, 0, 0, 0.14);
+  /* severity scale, lowest to highest band */
+  --b0: #d6d6d6;
+  --b1: #b3b3b3;
+  --b2: #8f8f8f;
+  --b3: #6b6b6b;
+  --b4: #454545;
+  --b5: #1a1a1a;
+  --display: "Newsreader", Georgia, "Times New Roman", serif;
+  --body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000;
+    --ink: #ffffff;
+    --muted: #9a9a9a;
+    --line: #2e2e2e;
+    --accent: #ffffff;
+    --accent-ink: #000000;
+    --shadow: rgba(0, 0, 0, 0.5);
+  --glass-a: rgba(255, 255, 255, 0.075);
+  --glass-b: rgba(255, 255, 255, 0.02);
+  --glass-edge: rgba(255, 255, 255, 0.14);
+  --sh-inner: rgba(0, 0, 0, 0.55);
+  --sh-contact: rgba(0, 0, 0, 0.6);
+  --sh-drop: rgba(0, 0, 0, 0.7);
+    --b0: #3a3a3a;
+    --b1: #585858;
+    --b2: #787878;
+    --b3: #9a9a9a;
+    --b4: #c0c0c0;
+    --b5: #ececec;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000;
+  --ink: #ffffff;
+  --muted: #9a9a9a;
+  --line: #2e2e2e;
+  --accent: #ffffff;
+  --accent-ink: #000000;
+  --shadow: rgba(0, 0, 0, 0.5);
+  --glass-a: rgba(255, 255, 255, 0.075);
+  --glass-b: rgba(255, 255, 255, 0.02);
+  --glass-edge: rgba(255, 255, 255, 0.14);
+  --sh-inner: rgba(0, 0, 0, 0.55);
+  --sh-contact: rgba(0, 0, 0, 0.6);
+  --sh-drop: rgba(0, 0, 0, 0.7);
+  --b0: #3a3a3a;
+  --b1: #585858;
+  --b2: #787878;
+  --b3: #9a9a9a;
+  --b4: #c0c0c0;
+  --b5: #ececec;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background:
+    radial-gradient(60% 50% at 24% 30%, color-mix(in srgb, var(--ink) 5%, transparent), transparent 70%),
+    radial-gradient(50% 45% at 80% 78%, color-mix(in srgb, var(--ink) 4%, transparent), transparent 70%),
+    var(--bg);
+  color: var(--ink);
+  font: 400 16px/1.55 var(--body);
+}
+h1, h2 {
+  font-family: var(--display);
+  font-weight: 600;
+  line-height: 1.15;
+  text-wrap: balance;
+  margin: 0;
+}
+.sr {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* frame */
+.app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.top {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 4px 16px; padding: 12px 18px;
+}
+.brand { font-family: var(--display); font-weight: 600; font-size: 18px; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.meta b { color: var(--ink); font-weight: 600; }
+.meta > span { white-space: nowrap; }
+.main { display: grid; grid-template-columns: minmax(0, 1fr) auto; min-height: 0; }
+
+/* pager */
+.stage { position: relative; overflow: hidden; min-height: 0; }
+.track {
+  position: absolute; top: 0; left: 0; right: 0;
+  transition: transform 0.55s cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: transform;
+}
+.slide {
+  display: flex; overflow-y: auto;
+  opacity: 0.12; transition: opacity 0.5s;
+  outline: none;
+}
+.slide.cur { opacity: 1; }
+.inner { margin: auto; width: 100%; max-width: 640px; padding: 20px; }
+
+/* buttons are plain text, not boxes */
+.btn {
+  font: 600 15px/1.2 var(--body);
+  padding: 8px 0;
+  border: 0; border-radius: 4px;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:not(.ghost)::after { content: " \2192"; }
+.btn:hover { text-decoration: underline; text-underline-offset: 4px; }
+.btn.ghost { color: var(--muted); font-weight: 500; font-size: 14px; }
+.btn:focus-visible, .link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.link {
+  font: 500 13px/1 var(--body);
+  padding: 8px 10px; border: 0; border-radius: 6px;
+  background: none; color: var(--accent); cursor: pointer; white-space: nowrap;
+}
+.link:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+
+/* intro */
+.intro h1 { font-size: clamp(30px, 6vw, 44px); }
+.intro p { margin: 14px 0 0; max-width: 56ch; color: var(--muted); }
+.intro p.lead { color: var(--ink); font-size: 17px; }
+.intro .go { margin-top: 22px; display: flex; align-items: center; gap: 8px 22px; flex-wrap: wrap; }
+.intro .go .btn { font-size: 17px; }
+.intro .hint { margin: 0; font-size: 13px; }
+
+/* question: no panel, just the heading and the options */
+.qhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+.qno { font-size: 24px; }
+.qno span { font-family: var(--body); font-size: 13px; font-weight: 400; color: var(--muted); }
+.qstate { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.card.done .qstate { color: var(--accent); font-weight: 600; }
+.opts { display: flex; flex-direction: column; gap: 8px; }
+.opt {
+  position: relative;
+  display: grid; grid-template-columns: 18px 1fr; gap: 12px; align-items: start;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  border-radius: 12px;
+  font-size: 16.5px;
+  cursor: pointer;
+  /* frosted glass: translucent fill and blurred backdrop; inside, a lit top edge and a shaded bottom edge;
+     outside, a thin contact shadow and a soft drop shadow */
+  background: linear-gradient(180deg, var(--glass-a), var(--glass-b));
+  -webkit-backdrop-filter: blur(10px) saturate(1.15);
+  backdrop-filter: blur(10px) saturate(1.15);
+  box-shadow:
+    inset 0 1px 0 var(--glass-edge),
+    inset 0 -2px 3px -1px var(--sh-inner),
+    0 1px 2px var(--sh-contact),
+    0 10px 22px -12px var(--sh-drop);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.15s, background-color 0.15s;
+}
+.opt:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--ink) 16%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--glass-edge),
+    inset 0 -2px 3px -1px var(--sh-inner),
+    0 2px 3px var(--sh-contact),
+    0 14px 26px -12px var(--sh-drop);
+}
+.opt:active { transform: translateY(0); }
+.opt input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.opt .digit {
+  padding-top: 3px;
+  font-size: 13px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+/* selected: pressed into the surface */
+.opt.sel {
+  transform: none;
+  border-color: color-mix(in srgb, var(--ink) 65%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 7%, transparent), color-mix(in srgb, var(--ink) 3%, transparent));
+  box-shadow:
+    inset 0 2px 5px var(--sh-inner),
+    inset 0 0 0 1px color-mix(in srgb, var(--ink) 4%, transparent),
+    0 1px 0 var(--glass-edge);
+}
+.opt.sel .digit { color: var(--accent); font-weight: 600; }
+.opt .ring { position: absolute; inset: -3px; border-radius: 13px; pointer-events: none; }
+.opt input:focus-visible ~ .ring { outline: 2px solid var(--accent); }
+.foot { display: flex; justify-content: space-between; margin: 14px -10px 0; }
+
+/* support notice for question 9: a rule on the left, no fill */
+.notice {
+  margin-top: 18px;
+  padding: 2px 0 2px 16px;
+  border-left: 3px solid var(--accent);
+  font-size: 15px;
+}
+.notice h3 { font: 600 16px/1.3 var(--body); margin: 0 0 6px; }
+.notice p { margin: 0 0 8px; }
+.notice ul { margin: 8px 0; padding-left: 18px; }
+.notice li { margin: 3px 0; }
+.notice a { color: var(--accent); }
+.notice > :last-child { margin-bottom: 0; }
+
+/* result */
+.result { padding-bottom: 22px; }
+.result h2 { font-size: 26px; margin-bottom: 14px; }
+.pending { color: var(--muted); }
+.pending strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+.pending .btn { margin-top: 10px; display: block; }
+.score-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.big { font-family: var(--display); font-weight: 600; font-size: 72px; line-height: 1; font-variant-numeric: tabular-nums; }
+.of { color: var(--muted); font-size: 18px; }
+.bandname { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-size: 24px; font-weight: 600; line-height: 1.2; margin: 12px 0 6px; }
+.swatch { width: 12px; height: 12px; border-radius: 50%; flex: none; background: var(--c); }
+.rmsg { margin: 0; max-width: 60ch; }
+#rnotice { margin-top: 18px; }
+
+.scale { padding: 0 14px; margin: 26px 0 6px; }
+.meter { position: relative; padding-top: 26px; }
+.mtrack { display: flex; height: 8px; border-radius: 4px; overflow: hidden; }
+.seg { background: var(--c); box-shadow: inset -2px 0 0 var(--bg); transition: opacity 0.2s; }
+.seg:last-child { box-shadow: none; }
+.result.complete .seg:not(.on) { opacity: 0.35; }
+.marker {
+  position: absolute; top: 0; left: 0;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+  opacity: 0;
+  transition: left 0.3s, opacity 0.2s;
+}
+.result.complete .marker { opacity: 1; }
+.marker b { font-size: 14px; line-height: 1.3; color: var(--ink); font-variant-numeric: tabular-nums; }
+.marker i { width: 0; height: 0; border: 5px solid transparent; border-top-color: var(--ink); border-bottom: 0; }
+.ticks { position: relative; height: 20px; margin-top: 6px; }
+.ticks span {
+  position: absolute; top: 0;
+  transform: translateX(-50%);
+  font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.ticks span:first-child { transform: none; }
+.ticks span:last-child { transform: translateX(-100%); }
+
+.bands { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 2px; }
+.bands li {
+  display: grid; grid-template-columns: 12px 64px 1fr; gap: 12px; align-items: center;
+  padding: 5px 0;
+  font-size: 15px;
+}
+.bands .rng { font-weight: 600; font-variant-numeric: tabular-nums; }
+.result.complete .bands li:not(.on) { color: var(--muted); }
+.bands li.on { font-weight: 600; }
+.bands li.on .rng { color: var(--accent); }
+.fine { margin: 14px 0 0; font-size: 13px; color: var(--muted); max-width: 64ch; }
+.actions { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* right-hand stack of 21 cards: faint, overlapping, the current one lifts out */
+.rail {
+  display: flex; flex-direction: column; justify-content: center;
+  width: 72px; padding: 12px 16px 16px 14px;
+}
+.chip {
+  --z: 0;
+  position: relative; z-index: var(--z);
+  flex: 0 1 26px; min-height: 9px;
+  padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer;
+}
+.face {
+  position: absolute; left: 0; right: 0; top: 0; bottom: -9px;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding-top: 3px;
+  border: 1px solid color-mix(in srgb, var(--ink) 30%, var(--bg));
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 11px; font-weight: 600; line-height: 1.3; font-variant-numeric: tabular-nums;
+  transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1), background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.3s;
+}
+.chip:hover .face { transform: translateX(-5px); }
+/* answered: dulled out, still opaque so the overlap of the stack stays clean */
+.chip.ans .face {
+  background: color-mix(in srgb, var(--ink) 6%, var(--bg));
+  color: color-mix(in srgb, var(--ink) 36%, var(--bg));
+  border-color: color-mix(in srgb, var(--ink) 9%, var(--bg));
+  font-weight: 500;
+}
+.chip.cur { z-index: 99; }
+.chip.cur .face,
+.chip.cur:hover .face {
+  background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600;
+  transform: translateX(-12px) scale(1.08);
+  box-shadow: 0 6px 16px var(--shadow);
+}
+.chip:focus-visible { outline: none; }
+.chip:focus-visible .face { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 520px) {
+  .brand { font-size: 16px; }
+  .meta { gap: 10px; }
+  .inner { padding: 14px; }
+  .opt { padding: 11px 12px; font-size: 16px; }
+  .big { font-size: 60px; }
+  .rail { display: none; }
+}
+@media (max-height: 520px) {
+  .face { font-size: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="brand">Beck Depression Inventory</div>
+    <div class="meta">
+      <span><b id="answered">0 / 21</b> answered</span>
+      <span>Score <b id="score">0</b></span>
+      <button type="button" class="link" id="toresult">Result</button>
+      <button type="button" class="link" id="restart">Restart</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="stage" id="stage">
+      <div class="track" id="slides">
+
+        <section class="slide intro" id="s-intro" aria-labelledby="h1" tabindex="-1">
+          <div class="inner">
+            <h1 id="h1">Beck Depression Inventory Calculator</h1>
+            <p class="lead">Twenty-one questions, one at a time. Choose the statement that fits you best. Your total is the sum of the numbers beside the statements you pick, from 0 to 63.</p>
+            <p>Answers stay on this page. Nothing is sent or saved. This is a self-scoring screening questionnaire, not a diagnosis.</p>
+            <div class="go">
+              <button type="button" class="btn" id="start">Start</button>
+              <p class="hint">Scroll, swipe, or use the up and down arrow keys to move. Press 0 to 3 to answer.</p>
+            </div>
+            <noscript><p>This calculator needs JavaScript to show the questions and add up your score.</p></noscript>
+          </div>
+        </section>
+
+        <!-- question slides are inserted here -->
+
+        <section class="slide" id="s-result" aria-labelledby="rh" tabindex="-1">
+          <div class="inner">
+            <div class="card result" id="result">
+              <h2 id="rh">Your result</h2>
+
+              <div class="pending" id="pending">
+                Answer all 21 questions to see your total and score band. <strong id="left">21</strong> left.
+                <button type="button" class="btn" id="firstopen">Go to first unanswered</button>
+              </div>
+
+              <div id="done" hidden>
+                <div class="score-row"><span class="big" id="rscore">0</span><span class="of">out of 63</span></div>
+                <div class="bandname"><span class="swatch" id="rswatch"></span><span id="rname"></span></div>
+                <p class="rmsg" id="rmsg"></p>
+                <div class="notice" id="rnotice" hidden></div>
+              </div>
+
+              <div class="scale" aria-hidden="true">
+                <div class="meter">
+                  <div class="marker" id="marker"><b id="mlabel">0</b><i></i></div>
+                  <div class="mtrack" id="mtrack"></div>
+                </div>
+                <div class="ticks" id="ticks"></div>
+              </div>
+
+              <ul class="bands" id="bands"></ul>
+              <p class="fine">The questionnaire's table starts at 1. A score of 0 is counted in the first band. A questionnaire score cannot diagnose depression. If your answers worry you, or how you feel is getting in the way of daily life, talk with a doctor or mental health professional.</p>
+
+              <div class="actions">
+                <button type="button" class="btn ghost" id="clear">Clear all answers</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <nav class="rail" id="rail" aria-label="Questions"></nav>
+  </main>
+
+</div>
+<div class="sr" role="status" aria-live="polite" id="live"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var QUESTIONS = [
+    ["I do not feel sad.", "I feel sad.", "I am sad all the time and I can't snap out of it.", "I am so sad and unhappy that I can't stand it."],
+    ["I am not particularly discouraged about the future.", "I feel discouraged about the future.", "I feel I have nothing to look forward to.", "I feel the future is hopeless and that things cannot improve."],
+    ["I do not feel like a failure.", "I feel I have failed more than the average person.", "As I look back on my life, all I can see is a lot of failures.", "I feel I am a complete failure as a person."],
+    ["I get as much satisfaction out of things as I used to.", "I don't enjoy things the way I used to.", "I don't get real satisfaction out of anything anymore.", "I am dissatisfied or bored with everything."],
+    ["I don't feel particularly guilty.", "I feel guilty a good part of the time.", "I feel quite guilty most of the time.", "I feel guilty all of the time."],
+    ["I don't feel I am being punished.", "I feel I may be punished.", "I expect to be punished.", "I feel I am being punished."],
+    ["I don't feel disappointed in myself.", "I am disappointed in myself.", "I am disgusted with myself.", "I hate myself."],
+    ["I don't feel I am any worse than anybody else.", "I am critical of myself for my weaknesses or mistakes.", "I blame myself all the time for my faults.", "I blame myself for everything bad that happens."],
+    ["I don't have any thoughts of killing myself.", "I have thoughts of killing myself, but I would not carry them out.", "I would like to kill myself.", "I would kill myself if I had the chance."],
+    ["I don't cry any more than usual.", "I cry more now than I used to.", "I cry all the time now.", "I used to be able to cry, but now I can't cry even though I want to."],
+    ["I am no more irritated by things than I ever was.", "I am slightly more irritated now than usual.", "I am quite annoyed or irritated a good deal of the time.", "I feel irritated all the time."],
+    ["I have not lost interest in other people.", "I am less interested in other people than I used to be.", "I have lost most of my interest in other people.", "I have lost all of my interest in other people."],
+    ["I make decisions about as well as I ever could.", "I put off making decisions more than I used to.", "I have greater difficulty in making decisions more than I used to.", "I can't make decisions at all anymore."],
+    ["I don't feel that I look any worse than I used to.", "I am worried that I am looking old or unattractive.", "I feel there are permanent changes in my appearance that make me look unattractive.", "I believe that I look ugly."],
+    ["I can work about as well as before.", "It takes an extra effort to get started at doing something.", "I have to push myself very hard to do anything.", "I can't do any work at all."],
+    ["I can sleep as well as usual.", "I don't sleep as well as I used to.", "I wake up 1-2 hours earlier than usual and find it hard to get back to sleep.", "I wake up several hours earlier than I used to and cannot get back to sleep."],
+    ["I don't get more tired than usual.", "I get tired more easily than I used to.", "I get tired from doing almost anything.", "I am too tired to do anything."],
+    ["My appetite is no worse than usual.", "My appetite is not as good as it used to be.", "My appetite is much worse now.", "I have no appetite at all anymore."],
+    ["I haven't lost much weight, if any, lately.", "I have lost more than five pounds.", "I have lost more than ten pounds.", "I have lost more than fifteen pounds."],
+    ["I am no more worried about my health than usual.", "I am worried about physical problems like aches, pains, upset stomach, or constipation.", "I am very worried about physical problems and it's hard to think of much else.", "I am so worried about my physical problems that I cannot think of anything else."],
+    ["I have not noticed any recent change in my interest in sex.", "I am less interested in sex than I used to be.", "I have almost no interest in sex.", "I have lost interest in sex completely."]
+  ];
+
+  var BANDS = [
+    { min: 0,  max: 10, name: "Normal ups and downs", c: "--b0",
+      msg: "Scores of 0 to 10 count as normal ups and downs. If something still feels off, it is fine to talk with someone about it." },
+    { min: 11, max: 16, name: "Mild mood disturbance", c: "--b1",
+      msg: "A mild mood disturbance. Keep an eye on how you feel over the next few weeks, and consider talking with someone you trust." },
+    { min: 17, max: 20, name: "Borderline clinical depression", c: "--b2",
+      msg: "This is the borderline range. Consider talking with a doctor or counselor, especially if these feelings have lasted more than two weeks." },
+    { min: 21, max: 30, name: "Moderate depression", c: "--b3",
+      msg: "This range points to moderate depression. Please consider speaking with a doctor or mental health professional. Depression is common and treatable." },
+    { min: 31, max: 40, name: "Severe depression", c: "--b4",
+      msg: "This range points to severe depression. Please speak with a doctor or mental health professional soon. Treatment helps." },
+    { min: 41, max: 63, name: "Extreme depression", c: "--b5",
+      msg: "This range points to extreme depression. Please speak with a doctor or mental health professional as soon as you can. If you feel unsafe, contact a crisis line or emergency services." }
+  ];
+
+  var N = QUESTIONS.length;      // 21
+  var MAX = N * 3;               // 63
+  var STEP_LOCK = 480;           // ms a step locks further wheel steps
+  var answers = [];
+  for (var k = 0; k < N; k++) answers.push(null);
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function bandFor(score) {
+    for (var i = 0; i < BANDS.length; i++) {
+      if (score >= BANDS[i].min && score <= BANDS[i].max) return BANDS[i];
+    }
+    return BANDS[BANDS.length - 1];
+  }
+  function noticeHtml(level) {
+    var urgent = level >= 2
+      ? "<strong>If you might act on these thoughts, or you are in immediate danger, call your local emergency number now.</strong> "
+      : "";
+    return "<h3>You do not have to carry this alone</h3>" +
+      "<p>Thank you for answering honestly. If you are having thoughts of ending your life, please reach out to someone now. Talking with a trained person can help.</p>" +
+      "<ul>" +
+      "<li><strong>United States:</strong> call or text <a href=\"tel:988\">988</a> (988 Suicide &amp; Crisis Lifeline)</li>" +
+      "<li><strong>India:</strong> Tele-MANAS, <a href=\"tel:14416\">14416</a> or 1-800-891-4416</li>" +
+      "<li><strong>UK and Ireland:</strong> Samaritans, <a href=\"tel:116123\">116 123</a></li>" +
+      "<li><strong>Elsewhere:</strong> <a href=\"https://findahelpline.com\" target=\"_blank\" rel=\"noopener\">findahelpline.com</a> lists services by country</li>" +
+      "</ul>" +
+      "<p>" + urgent + "It also helps to tell a friend, a family member, or a doctor how you have been feeling.</p>";
+  }
+
+  /* ---------- build the question slides ---------- */
+  var track = $("slides"), resultSlide = $("s-result");
+  QUESTIONS.forEach(function (opts, i) {
+    var n = i + 1;
+    var sec = document.createElement("section");
+    sec.className = "slide";
+    sec.id = "q" + n;
+    sec.tabIndex = -1;
+    sec.setAttribute("aria-labelledby", "qh" + n);
+    var html = '<div class="inner"><div class="card" id="card' + n + '">' +
+      '<div class="qhead"><h2 class="qno" id="qh' + n + '">Question ' + n + ' <span>of ' + N + '</span></h2>' +
+      '<span class="qstate" id="qs' + n + '">Not answered</span></div>' +
+      '<div class="opts" role="radiogroup" aria-labelledby="qh' + n + '">';
+    opts.forEach(function (text, j) {
+      html += '<label class="opt"><input type="radio" name="q' + n + '" value="' + j + '">' +
+        '<span class="digit">' + j + '</span><span class="text">' + esc(text) + '</span><span class="ring"></span></label>';
+    });
+    html += "</div>";
+    if (n === 9) html += '<div class="notice" id="notice9" role="note" hidden></div>';
+    html += '<div class="foot">' +
+      '<button type="button" class="link" data-go="-1">↑ Previous</button>' +
+      '<button type="button" class="link" data-go="1">' + (n === N ? "See result" : "Next") + ' ↓</button>' +
+      "</div></div></div>";
+    sec.innerHTML = html;
+    track.insertBefore(sec, resultSlide);
+  });
+
+  var slides = Array.prototype.slice.call(track.children);   // intro, 21 questions, result
+  var COUNT = slides.length;
+  var FIRST_Q = 1, LAST_Q = N, RESULT = COUNT - 1;
+  track.style.height = (COUNT * 100) + "%";
+  slides.forEach(function (s, i) {
+    s.style.height = (100 / COUNT) + "%";
+    if (i !== 0) s.setAttribute("inert", "");
+  });
+  slides[0].classList.add("cur");
+
+  /* ---------- stack of 21 cards ---------- */
+  var rail = $("rail"), chips = [];
+  for (var c = 1; c <= N; c++) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.style.setProperty("--z", c);
+    b.setAttribute("data-n", c);
+    b.setAttribute("aria-label", "Go to question " + c);
+    b.title = "Question " + c;
+    b.innerHTML = '<span class="face">' + c + "</span>";
+    rail.appendChild(b);
+    chips.push(b);
+  }
+
+  /* ---------- result scale and band list ---------- */
+  var mtrack = $("mtrack"), ticks = $("ticks"), bandList = $("bands");
+  var segEls = [], liEls = [];
+  BANDS.forEach(function (bd) {
+    var seg = document.createElement("div");
+    seg.className = "seg";
+    seg.style.flex = (bd.max - bd.min + 1) + " 0 0";
+    seg.style.setProperty("--c", "var(" + bd.c + ")");
+    mtrack.appendChild(seg);
+    segEls.push(seg);
+
+    var t = document.createElement("span");
+    t.style.left = (bd.min / (MAX + 1) * 100) + "%";
+    t.textContent = bd.min;
+    ticks.appendChild(t);
+
+    var li = document.createElement("li");
+    li.innerHTML = '<span class="swatch" style="--c: var(' + bd.c + ')"></span>' +
+      '<span class="rng">' + bd.min + "–" + bd.max + "</span><span>" + esc(bd.name) + "</span>";
+    bandList.appendChild(li);
+    liEls.push(li);
+  });
+  var endTick = document.createElement("span");
+  endTick.style.left = "100%";
+  endTick.textContent = MAX;
+  ticks.appendChild(endTick);
+
+  /* ---------- pager ---------- */
+  var idx = 0, busy = false, busyTimer = null;
+  var elLive = $("live");
+
+  function go(i) {
+    i = Math.max(0, Math.min(COUNT - 1, i));
+    if (i === idx) return;
+    idx = i;
+    track.style.transform = "translateY(" + (-idx * 100 / COUNT) + "%)";
+    slides.forEach(function (s, k) {
+      s.classList.toggle("cur", k === idx);
+      if (k === idx) s.removeAttribute("inert"); else s.setAttribute("inert", "");
+    });
+    chips.forEach(function (ch, k) {
+      var on = k === idx - 1;
+      ch.classList.toggle("cur", on);
+      if (on) ch.setAttribute("aria-current", "step"); else ch.removeAttribute("aria-current");
+    });
+    busy = true;
+    clearTimeout(busyTimer);
+    busyTimer = setTimeout(function () { busy = false; }, STEP_LOCK);
+    try { slides[idx].focus({ preventScroll: true }); } catch (e) {}
+    announce();
+  }
+  function step(dir) { if (!busy) go(idx + dir); }
+
+  function announce() {
+    if (idx >= FIRST_Q && idx <= LAST_Q) elLive.textContent = "Question " + idx + " of " + N;
+    else if (idx === RESULT) elLive.textContent = "Result";
+    else elLive.textContent = "Introduction";
+  }
+
+  /* true when the current slide can still scroll itself in this direction (tall result card, short screens) */
+  function canScroll(el, dir) {
+    if (el.scrollHeight <= el.clientHeight + 1) return false;
+    return dir > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 1 : el.scrollTop > 0;
+  }
+
+  /* wheel and trackpad: any small scroll steps once; trailing inertia is ignored until a new gesture starts */
+  var lastT = 0, lastAbs = 0, spent = false;
+  document.addEventListener("wheel", function (e) {
+    if (e.ctrlKey) return;
+    var dy = e.deltaY;
+    if (!dy || Math.abs(e.deltaX) > Math.abs(dy)) return;
+    var dir = dy > 0 ? 1 : -1;
+    if (canScroll(slides[idx], dir)) {
+      /* tall slide scrolls natively; its trailing inertia must not carry on into the next question */
+      lastT = Date.now(); lastAbs = Math.abs(dy); spent = true;
+      return;
+    }
+    e.preventDefault();
+    var now = Date.now(), abs = Math.abs(dy);
+    var fresh = now - lastT > 160 || abs > lastAbs + 25;
+    lastT = now;
+    lastAbs = abs;
+    if (fresh) spent = false;
+    if (busy || spent) return;
+    spent = true;
+    go(idx + dir);
+  }, { passive: false });
+
+  /* touch: a short vertical swipe steps once */
+  var touchY = null, touchDone = false;
+  document.addEventListener("touchstart", function (e) {
+    touchY = e.touches[0].clientY;
+    touchDone = false;
+  }, { passive: true });
+  document.addEventListener("touchmove", function (e) {
+    if (touchY === null || touchDone || busy) return;
+    var dy = touchY - e.touches[0].clientY;
+    if (Math.abs(dy) < 28) return;
+    var dir = dy > 0 ? 1 : -1;
+    touchDone = true;                                // one gesture does one thing
+    if (canScroll(slides[idx], dir)) return;         // tall slide: let it scroll natively
+    go(idx + dir);
+  }, { passive: true });
+
+  /* keyboard: up/down (or page keys) always move between questions, 0-3 pick the option */
+  document.addEventListener("keydown", function (e) {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    var dir = 0, isArrow = false;
+    if (e.key === "ArrowDown") { dir = 1; isArrow = true; }
+    else if (e.key === "ArrowUp") { dir = -1; isArrow = true; }
+    else if (e.key === "PageDown") dir = 1;
+    else if (e.key === "PageUp") dir = -1;
+    if (dir) {
+      /* arrows always change question; only on the tall result screen do they scroll first.
+         Page keys scroll any slide taller than the screen before moving on. */
+      var scrollFirst = isArrow ? idx === RESULT : true;
+      if (scrollFirst && canScroll(slides[idx], dir)) return;
+      e.preventDefault();                            // also stops a focused radio from changing its answer
+      if (e.repeat) step(dir); else go(idx + dir);   // a held key is paced, separate presses always count
+      return;
+    }
+    if (/^[0-3]$/.test(e.key) && idx >= FIRST_Q && idx <= LAST_Q) {
+      var inp = slides[idx].querySelector('input[value="' + e.key + '"]');
+      if (inp) {
+        e.preventDefault();
+        inp.checked = true;
+        inp.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
+  });
+
+  rail.addEventListener("click", function (e) {
+    var ch = e.target.closest ? e.target.closest(".chip") : null;
+    if (ch) go(parseInt(ch.getAttribute("data-n"), 10));
+  });
+  track.addEventListener("click", function (e) {
+    var bt = e.target.closest ? e.target.closest("[data-go]") : null;
+    if (bt) go(idx + parseInt(bt.getAttribute("data-go"), 10));
+  });
+  /* focus on an off-screen slide must never scroll the clipped stage */
+  var stage = $("stage");
+  stage.addEventListener("scroll", function () { stage.scrollTop = 0; stage.scrollLeft = 0; });
+
+  function firstOpen() {
+    var i = answers.indexOf(null);
+    return i === -1 ? FIRST_Q : i + 1;
+  }
+  $("start").addEventListener("click", function () { go(firstOpen()); });
+  $("firstopen").addEventListener("click", function () { go(firstOpen()); });
+  $("toresult").addEventListener("click", function () { go(RESULT); });
+
+  /* ---------- scoring ---------- */
+  var elAnswered = $("answered"), elScore = $("score"), elResult = $("result"),
+      elPending = $("pending"), elDone = $("done"), elMarker = $("marker");
+
+  function update() {
+    var answered = 0, total = 0;
+    answers.forEach(function (a, i) {
+      var n = i + 1;
+      var done = a !== null;
+      if (done) { answered++; total += a; }
+      $("card" + n).classList.toggle("done", done);
+      $("qs" + n).textContent = done ? "Score " + a : "Not answered";
+      chips[i].classList.toggle("ans", done);
+      var labels = $("q" + n).querySelectorAll(".opt");
+      for (var j = 0; j < labels.length; j++) labels[j].classList.toggle("sel", a === j);
+    });
+
+    var complete = answered === N;
+    elAnswered.textContent = answered + " / " + N;
+    elScore.textContent = total;
+    $("start").textContent = answered > 0 && !complete ? "Continue" : "Start";
+
+    /* question 9 notice */
+    var a9 = answers[8];
+    var n9 = $("notice9");
+    if (a9 !== null && a9 > 0) { n9.innerHTML = noticeHtml(a9); n9.hidden = false; }
+    else { n9.hidden = true; n9.innerHTML = ""; }
+
+    /* result */
+    var band = bandFor(total);
+    elResult.classList.toggle("complete", complete);
+    elPending.hidden = complete;
+    elDone.hidden = !complete;
+    $("left").textContent = N - answered;
+    elMarker.style.left = ((total + 0.5) / (MAX + 1) * 100) + "%";
+    $("mlabel").textContent = total;
+    segEls.forEach(function (s, i) { s.classList.toggle("on", complete && BANDS[i] === band); });
+    liEls.forEach(function (l, i) { l.classList.toggle("on", complete && BANDS[i] === band); });
+
+    if (complete) {
+      $("rscore").textContent = total;
+      $("rname").textContent = band.name;
+      $("rswatch").style.setProperty("--c", "var(" + band.c + ")");
+      $("rmsg").textContent = band.msg;
+      var rn = $("rnotice");
+      if (a9 > 0) { rn.innerHTML = noticeHtml(a9); rn.hidden = false; }
+      else { rn.hidden = true; rn.innerHTML = ""; }
+    }
+
+    if (idx >= FIRST_Q && idx <= LAST_Q && answers[idx - 1] !== null) {
+      elLive.textContent = "Question " + idx + " answered " + answers[idx - 1] + ". Score so far " + total + ".";
+    }
+    if (complete && idx === RESULT) {
+      elLive.textContent = "Total score " + total + " of " + MAX + ", " + band.name + ".";
+    }
+  }
+
+  track.addEventListener("change", function (e) {
+    var t = e.target;
+    if (!t || t.type !== "radio") return;
+    var n = parseInt(t.name.slice(1), 10) - 1;
+    answers[n] = parseInt(t.value, 10);
+    update();
+  });
+
+  /* two-step reset so a stray click cannot wipe 21 answers.
+     Used by the top "Restart" and by "Clear all answers" on the result screen. */
+  var resetBtns = [
+    { el: $("restart"), idle: "Restart", armed: "Confirm restart" },
+    { el: $("clear"), idle: "Clear all answers", armed: "Press again to clear everything" }
+  ];
+  var armedBtn = null, armTimer = null;
+  function disarm() {
+    clearTimeout(armTimer);
+    if (armedBtn) { armedBtn.el.textContent = armedBtn.idle; armedBtn = null; }
+  }
+  function resetAll() {
+    var inputs = track.querySelectorAll("input");
+    for (var i = 0; i < inputs.length; i++) inputs[i].checked = false;
+    for (var q = 0; q < N; q++) answers[q] = null;
+    update();
+    go(0);
+  }
+  resetBtns.forEach(function (rb) {
+    rb.el.addEventListener("click", function () {
+      var started = answers.some(function (a) { return a !== null; });
+      if (started && armedBtn !== rb) {          // first press only asks; nothing to lose when no answers yet
+        disarm();
+        armedBtn = rb;
+        rb.el.textContent = rb.armed;
+        armTimer = setTimeout(disarm, 4000);
+        return;
+      }
+      disarm();
+      resetAll();
+    });
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>
